@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/LiveWallpaper-Live_Wallpaper.iml" filepath="$PROJECT_DIR$/.idea/modules/LiveWallpaper-Live_Wallpaper.iml" group="Live_Wallpaper" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Live_Wallpaper.iml" filepath="$PROJECT_DIR$/.idea/modules/Live_Wallpaper.iml" group="Live_Wallpaper" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/app.iml" group="Live Wallpaper/app" />
+    </modules>
+  </component>
+</project>

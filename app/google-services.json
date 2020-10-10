@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "38047429673",
+    "firebase_url": "https://live-wallpaper-492aa.firebaseio.com",
+    "project_id": "live-wallpaper-492aa",
+    "storage_bucket": "live-wallpaper-492aa.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:38047429673:android:8800ddb38ae1108c181838",
+        "android_client_info": {
+          "package_name": "com.idea.solution.livewallpaper"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "38047429673-6rh01mp951p1rq9p5rjdu2t209ngok32.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDzAaUsMPaGKVQJMtSEZIV1A5cl3WsyJs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "38047429673-6rh01mp951p1rq9p5rjdu2t209ngok32.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
