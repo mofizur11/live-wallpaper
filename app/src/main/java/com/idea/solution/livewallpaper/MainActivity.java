@@ -23,6 +23,6 @@ public class MainActivity extends AppCompatActivity {
                 finish();
 
             }
-        }, 2000); //sleep 2 second
+        }, 500); //sleep 2 second
     }
 }

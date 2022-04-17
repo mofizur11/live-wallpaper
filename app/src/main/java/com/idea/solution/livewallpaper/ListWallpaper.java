@@ -2,7 +2,6 @@ package com.idea.solution.livewallpaper;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -39,10 +38,8 @@ public class ListWallpaper extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_wallpaper);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setTitle(Common.CATEGORY_SELECTED);
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle(Common.CATEGORY_SELECTED);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);  
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
         recyclerView = (RecyclerView) findViewById(R.id.recycler_list_wallpaper);
@@ -82,7 +79,7 @@ public class ListWallpaper extends AppCompatActivity {
 
                                 Picasso.get()
                                         .load(model.getImageLink())
-                                        .error(R.drawable.ic_baseline_terrain_24)
+                                        .error(R.drawable.images)
                                         .into(holder.wallpaper, new Callback() {
                                             @Override
                                             public void onSuccess() {

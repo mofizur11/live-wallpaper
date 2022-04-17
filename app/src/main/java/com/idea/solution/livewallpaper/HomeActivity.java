@@ -5,133 +5,59 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.Menu;
 import android.view.View;
-import android.widget.TextView;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.firebase.ui.auth.AuthUI;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.navigation.NavigationView;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.tabs.TabLayout;
-import com.google.firebase.auth.FirebaseAuth;
-import com.idea.solution.livewallpaper.Adapter.MyFragmentAdapter;
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.firebase.ui.database.FirebaseRecyclerOptions;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.idea.solution.livewallpaper.Common.Common;
+import com.idea.solution.livewallpaper.Interface.ItemClickListener;
+import com.idea.solution.livewallpaper.Model.CategoryItem;
+import com.idea.solution.livewallpaper.ViewHolder.CategoryViewHolder;
+import com.squareup.picasso.Callback;
+import com.squareup.picasso.NetworkPolicy;
+import com.squareup.picasso.Picasso;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.core.app.ActivityCompat;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.viewpager.widget.ViewPager;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 
-public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class HomeActivity extends AppCompatActivity {
 
-    ViewPager viewPager;
-    TabLayout tabLayout;
+    //Firebase
+    FirebaseDatabase database;
+    DatabaseReference categoryBackground;
 
-    DrawerLayout drawer;
+    //Firebase adapter
+    FirebaseRecyclerOptions<CategoryItem> options;
+    FirebaseRecyclerAdapter<CategoryItem, CategoryViewHolder> adapter;
 
-    NavigationView navigationView;
+    //View
+    RecyclerView recyclerView;
 
-    BottomNavigationView menu_bottom;
-
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode)
-        {
-            case Common.PERMISSION_REQUEST_CODE:
-            {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                    Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show();
-                else
-                    Toast.makeText(this, "You send accept this permission to download image", Toast.LENGTH_SHORT).show();
-            }
-
-            break;
-        }
-    }
-
-
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == Common.SIGN_IN_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {
-                Snackbar.make(drawer, new StringBuilder("Welcome ")
-                        .append(FirebaseAuth.getInstance().getCurrentUser().getEmail()
-                                .toString()), Snackbar.LENGTH_SHORT)
-                        .show();
-
-                //Request Runtime Permission
-                if (ActivityCompat.checkSelfPermission(this,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, Common.PERMISSION_REQUEST_CODE);
-                }
-
-                viewPager = (ViewPager) findViewById(R.id.viewPager);
-                MyFragmentAdapter adapter = new MyFragmentAdapter(getSupportFragmentManager(), this);
-                viewPager.setAdapter(adapter);
-
-                tabLayout = (TabLayout) findViewById(R.id.tabLayout);
-                tabLayout.setupWithViewPager(viewPager);
-
-                loadUserInformation();
-
-
-            }
-
-        }
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getSupportActionBar().setTitle("Live Wallpaper");
         setContentView(R.layout.activity_home);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle("Idea Live Wallpaper");
-        setSupportActionBar(toolbar);
 
-        drawer = findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
-        navigationView = findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
 
-        //Check if not sign-in then navigate Sign-in page
-        if (FirebaseAuth.getInstance().getCurrentUser() == null)
-        {
-            startActivityForResult(AuthUI.getInstance().createSignInIntentBuilder().build(),
-                    Common.SIGN_IN_REQUEST_CODE);
-        } else
-        {
-            Snackbar.make(drawer, new StringBuilder("Welcome ")
-                    .append(FirebaseAuth.getInstance().getCurrentUser().getEmail()
-                    .toString()),Snackbar.LENGTH_SHORT)
-                    .show();
-        }
-
-        menu_bottom = (BottomNavigationView) findViewById(R.id.navigation);
-        menu_bottom.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                if (item.getItemId() == R.id.action_upload)
-                    startActivity(new Intent(HomeActivity.this,UploadWallpaper.class));
-                return false;
-            }
-        });
 
         //Request Runtime Permission
         if (ActivityCompat.checkSelfPermission(this,
@@ -139,35 +65,109 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, Common.PERMISSION_REQUEST_CODE);
         }
 
-        viewPager = (ViewPager) findViewById(R.id.viewPager);
-        MyFragmentAdapter adapter = new MyFragmentAdapter(getSupportFragmentManager(), this);
-        viewPager.setAdapter(adapter);
+        database = FirebaseDatabase.getInstance();
+        categoryBackground = database.getReference(Common.STR_CATEGORY_BACKGROUND);
 
-        tabLayout = (TabLayout) findViewById(R.id.tabLayout);
-        tabLayout.setupWithViewPager(viewPager);
+        options = new FirebaseRecyclerOptions.Builder<CategoryItem>()
+                .setQuery(categoryBackground, CategoryItem.class) //Selected all
+                .build();
+        adapter = new FirebaseRecyclerAdapter<CategoryItem, CategoryViewHolder>(options) {
+            @Override
+            protected void onBindViewHolder(@NonNull final CategoryViewHolder holder, int position, @NonNull final CategoryItem model) {
 
-        
-        loadUserInformation();
+                Picasso.get()
+                        .load(model.getImageLink())
+                        .networkPolicy(NetworkPolicy.OFFLINE)
+                        .into(holder.background_image, new Callback() {
+                            @Override
+                            public void onSuccess() {
+
+                            }
+
+                            @Override
+                            public void onError(Exception e) {
+                                //Try again online cache failed
+                                Picasso.get()
+                                        .load(model.getImageLink())
+                                        .error(R.drawable.images)
+                                        .into(holder.background_image, new Callback() {
+                                            @Override
+                                            public void onSuccess() {
+
+                                            }
+
+                                            @Override
+                                            public void onError(Exception e) {
+                                                Log.e("Idea_Wall", "Could't fetch image");
+                                            }
+                                        });
+
+                            }
+                        });
+
+                holder.category_name.setText(model.getName());
+
+                holder.setItemClickListener(new ItemClickListener() {
+                    @Override
+                    public void onClick(View view, int position) {
+                        // Code late for details category
+                        Common.CATEGORY_ID_SELECTED = adapter.getRef(position).getKey(); // get key of item
+                        Common.CATEGORY_SELECTED = model.getName();
+                        Intent intent = new Intent(HomeActivity.this, ListWallpaper.class);
+                        startActivity(intent);
+                    }
+                });
+            }
+
+            @NonNull
+            @Override
+            public CategoryViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                View itemView = LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.layout_category_item, parent, false);
+                return new CategoryViewHolder(itemView);
+            }
+        };
+
+        recyclerView = (RecyclerView) findViewById(R.id.recycler_category);
+        recyclerView.setHasFixedSize(true);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(HomeActivity.this, 2);
+        recyclerView.setLayoutManager(gridLayoutManager);
+        setCategory();
+
     }
 
-    private void loadUserInformation() {
-        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-            View headerLayout = navigationView.getHeaderView(0);
-            TextView txt_email = (TextView) headerLayout.findViewById(R.id.tex_email);
-            txt_email.setText(FirebaseAuth.getInstance().getCurrentUser().getEmail());
-        }
+
+    private void setCategory() {
+        adapter.startListening();
+        recyclerView.setAdapter(adapter);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (adapter != null)
+            adapter.startListening();
 
     }
 
     @Override
-    public void onBackPressed() {
-        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
+    public void onStop() {
+        if (adapter != null)
+            adapter.stopListening();
+        super.onStop();
+    }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (adapter != null)
+            adapter.startListening();
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
     }
 
     @Override
@@ -185,29 +185,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-
-        int id = item.getItemId();
-
-        if (id == R.id.nav_home) {
-            Toast.makeText(this, "Nav Home", Toast.LENGTH_SHORT).show();
-
-        } else if (id == R.id.nav_gallery) {
-            Toast.makeText(this, "Nav Gallery", Toast.LENGTH_SHORT).show();
-
-        } else if (id == R.id.nav_slideshow) {
-            Toast.makeText(this, "Nav Slideshow", Toast.LENGTH_SHORT).show();
-
-        } else if (id == R.id.nav_view_upload){
-
-        }
-
-        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
     }
 
 

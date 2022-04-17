@@ -4,33 +4,26 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.WallpaperManager;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.facebook.CallbackManager;
-import com.facebook.FacebookCallback;
-import com.facebook.FacebookException;
-import com.facebook.share.Sharer;
-import com.facebook.share.model.SharePhoto;
-import com.facebook.share.model.SharePhotoContent;
-import com.facebook.share.widget.ShareDialog;
-import com.github.clans.fab.FloatingActionMenu;
-import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 import com.idea.solution.livewallpaper.Common.Common;
 import com.idea.solution.livewallpaper.Helper.SaveImageHelper;
 import com.squareup.picasso.Picasso;
@@ -44,26 +37,16 @@ import dmax.dialog.SpotsDialog;
 
 public class ViewWallpaper extends AppCompatActivity {
 
-    CollapsingToolbarLayout collapsingToolbarLayout;
-    FloatingActionButton floatingActionButton, fabDownload;
+    FloatingActionButton fabDownload, fabShare;
     ImageView imageView;
 
-    CoordinatorLayout rootLayout;
-
-    FloatingActionMenu mainFloating;
-    com.github.clans.fab.FloatingActionButton fbShare;
-
-    CallbackManager callbackManager;
-    ShareDialog shareDialog;
-
-
-    private Target target = new Target() {
+    private final Target target = new Target() {
         @Override
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
             WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
             try {
                 wallpaperManager.setBitmap(bitmap);
-                Snackbar.make(rootLayout, "Wallpaper was set", Snackbar.LENGTH_SHORT).show();
+                Toast.makeText(ViewWallpaper.this, "Wallpaper was set", Toast.LENGTH_SHORT).show();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -80,19 +63,16 @@ public class ViewWallpaper extends AppCompatActivity {
         }
     };
 
-    private Target facebookConvertBitmap = new Target() {
+    private final Target shareBitmap = new Target() {
         @Override
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
 
-            SharePhoto sharePhoto = new SharePhoto.Builder()
-                    .setBitmap(bitmap)
-                    .build();
-            if (ShareDialog.canShow(SharePhotoContent.class)) {
-                SharePhotoContent content = new SharePhotoContent.Builder()
-                        .addPhoto(sharePhoto)
-                        .build();
-                shareDialog.show(content);
-            }
+            Uri imageUri = Uri.parse(MediaStore.Images.Media.insertImage(getContentResolver(), bitmap,"title","description"));
+            Intent shareIntent = new Intent();
+            shareIntent.setAction(Intent.ACTION_SEND);
+            shareIntent.putExtra(Intent.EXTRA_STREAM, imageUri);
+            shareIntent.setType("image/*");
+            startActivity(Intent.createChooser(shareIntent, getResources().getText(R.string.send_to)));
         }
 
         @Override
@@ -119,6 +99,7 @@ public class ViewWallpaper extends AppCompatActivity {
 
                     String fileName = UUID.randomUUID().toString() + ".png";
 
+
                     Picasso.get()
                             .load(Common.select_background.getImageLink())
                             .into(new SaveImageHelper(getBaseContext(),
@@ -138,76 +119,29 @@ public class ViewWallpaper extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_wallpaper);
+       // getSupportActionBar().setTitle(Common.CATEGORY_SELECTED);
+        getSupportActionBar().setTitle(" ");
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null)
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-
-        //Init Facebook
-        callbackManager = CallbackManager.Factory.create();
-        shareDialog = new ShareDialog(this);
-
-        //Init
-        rootLayout = (CoordinatorLayout) findViewById(R.id.rootLayout);
-        collapsingToolbarLayout = (CollapsingToolbarLayout) findViewById(R.id.collapsimg);
-        collapsingToolbarLayout.setCollapsedTitleTextAppearance(R.style.CollapsedAppBar);
-        collapsingToolbarLayout.setExpandedTitleTextAppearance(R.style.ExpandedAppBar);
-
-        collapsingToolbarLayout.setTitle(Common.CATEGORY_SELECTED);
-
-        imageView = (ImageView) findViewById(R.id.imageThumb);
+        imageView = findViewById(R.id.imageThumb);
         Picasso.get()
                 .load(Common.select_background.getImageLink())
                 .into(imageView);
 
 
-        mainFloating = (FloatingActionMenu) findViewById(R.id.menu);
-        fbShare = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fb_share);
-        fbShare.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //Create CallBack
-                shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
-                    @Override
-                    public void onSuccess(Sharer.Result result) {
-                        Toast.makeText(ViewWallpaper.this, "Share Successful!!", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onCancel() {
-                        Toast.makeText(ViewWallpaper.this, "Share Canceled!!", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onError(FacebookException error) {
-
-                        Toast.makeText(ViewWallpaper.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                        Toast.makeText(ViewWallpaper.this, "not success", Toast.LENGTH_SHORT).show();
-
-                    }
-                });
-
-                //we will fetch photo from link and convert to bitmap
-                Picasso.get()
-                        .load(Common.select_background.getImageLink())
-                        .into(facebookConvertBitmap);
-
-            }
-        });
-
-        floatingActionButton = (FloatingActionButton) findViewById(R.id.fabWallpaper);
-        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+        fabShare = findViewById(R.id.fabShare);
+        fabShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Picasso.get()
                         .load(Common.select_background.getImageLink())
-                        .into(target);
+                        .into(shareBitmap);
             }
         });
 
-        fabDownload = (FloatingActionButton) findViewById(R.id.fabDownload);
+        fabDownload = findViewById(R.id.fabDownload);
         fabDownload.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.M)
             @Override
@@ -237,9 +171,31 @@ public class ViewWallpaper extends AppCompatActivity {
 
 
     @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == android.R.id.home) ;
-        finish(); // close activity when click home button
-        return super.onOptionsItemSelected(item);
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.wallpaper_set, menu);
+        return true;
     }
+
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+//        if (item.getItemId() == android.R.id.home) ;
+//        finish(); // close activity when click home button
+
+        switch (item.getItemId()){
+            case android.R.id.home:
+                finish();
+                return true;
+            case R.id.wallpaperSet:
+                Picasso.get()
+                        .load(Common.select_background.getImageLink())
+                        .into(target);
+                Toast.makeText(this, "Wallpaper was set", Toast.LENGTH_SHORT).show();
+                return true;
+            default:
+
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
 }
